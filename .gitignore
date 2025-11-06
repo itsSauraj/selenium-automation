@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Poetry
+.venv/
+poetry.lock
+
+# Environment
+.env
+
+# Logs
+logs/
+*.log
+
+# Data
+downloads/
+uploads/
+
+# IDEs
+.idea/
+.vscode/

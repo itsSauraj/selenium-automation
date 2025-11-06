@@ -1,0 +1,10 @@
+from selenium.webdriver.common.by import By
+
+class LoginPageLocators:
+    """
+    A class for login page locators. All login page locators should be defined here.
+    """
+    USERNAME_FIELD = (By.NAME, "email")
+    PASSWORD_FIELD = (By.NAME, "password")
+
+# Add other page locator classes here as needed
