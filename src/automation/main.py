@@ -1,7 +1,7 @@
 from automation.authentication.session_manager import SessionManager
 from automation.authentication.login import LoginPage
 from automation.workflows.download_reports import DownloadReportsWorkflow
-from automation.config.settings import BASE_URL
+from automation.config.settings import settings
 from automation.utilities.logger import logger
 
 def main():
@@ -15,7 +15,7 @@ def main():
 
     try:
         # Navigate to the base URL
-        driver.get(BASE_URL)
+        driver.get(str(settings.BASE_URL))
 
         # Perform login
         login_page = LoginPage(driver)

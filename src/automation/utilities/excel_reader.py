@@ -1,9 +1,11 @@
 import openpyxl
+import pandas as pd
 from collections import defaultdict
-from automation.config.settings import EXCEL_FILE_PATH
+from automation.config.settings import settings
 from automation.utilities.logger import logger
+from automation.config.excel_mapper import ExcelMapper
 
-def get_orders_from_excel(sheet_name="Sheet1"):
+def get_orders_from_excel(sheet_name="Sheet1", custom_fields=None):
     """
     Reads orders and their associated reports from the specified Excel sheet.
 
@@ -13,32 +15,40 @@ def get_orders_from_excel(sheet_name="Sheet1"):
 
     Args:
         sheet_name (str): The name of the sheet to read from. Defaults to "Sheet1".
+        custom_fields (dict, optional): A dictionary to customize field names.
+                                        Keys are existing field names and values are custom names.
+    # Example of default field names in ExcelMapper:             
+    #     ORDER_ID = "AUTO NAME"
+    #     REPORT_TYPE = "REPORT TYPE"
+    #     REPORT_NAME = "REPORT NAME"
+    #     PRIORITY = "PRIORITY"
 
     Returns:
         defaultdict: A dictionary with Order IDs as keys and a list of report dictionaries as values.
     """
-    try:
-        workbook = openpyxl.load_workbook(EXCEL_FILE_PATH)
-        sheet = workbook[sheet_name]
-        
-        orders = defaultdict(list)
-        headers = [cell.value for cell in sheet[1]]
 
-        for row in sheet.iter_rows(min_row=2, values_only=True):
-            row_data = dict(zip(headers, row))
-            order_id = row_data.get("Order ID")
-            if order_id:
-                orders[order_id].append(row_data)
+    excel_columns = ExcelMapper()
+    if custom_fields is not None:
+        excel_columns.set_multiple_custom_fields(custom_fields)
+
+    try:
+        df = pd.read_excel(settings.EXCEL_FILE_PATH, sheet_name=sheet_name)
+
+        # Extract unique, non-null order IDs
+        if excel_columns.ORDER_ID in df.columns:
+            orders = set(df[excel_columns.ORDER_ID].dropna().unique())
+        else:
+            orders = set()
 
         logger.info(f"Successfully read {len(orders)} orders from sheet: {sheet_name}")
         return orders
 
     except FileNotFoundError:
-        logger.error(f"Excel file not found at path: {EXCEL_FILE_PATH}")
-        return defaultdict(list)
+        logger.error(f"Excel file not found at path: {settings.EXCEL_FILE_PATH}")
+        return set()
     except KeyError:
         logger.error(f"Sheet '{sheet_name}' not found in the Excel file.")
-        return defaultdict(list)
+        return set()
     except Exception as e:
         logger.error(f"An error occurred while reading the Excel file: {e}")
-        return defaultdict(list)
+        return set()

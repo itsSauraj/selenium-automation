@@ -54,3 +54,12 @@ class PageBase:
         if element:
             return element.text
         return None
+    
+    def get_page_title(self):
+        """
+        Gets the title of the current page.
+
+        Returns:
+            str: The title of the current page.
+        """
+        return self.driver.title

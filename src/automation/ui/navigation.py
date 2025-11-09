@@ -86,3 +86,22 @@ class Navigation(PageBase):
         else:
             logger.error(f"Unsupported locator type: {locator_type}")
             return None
+        
+
+class PageNavigation:
+    """
+    This class manages high-level page navigation using the Navigation class.
+    """
+
+    def __init__(self, driver):
+        """
+        Initializes the PageNavigation class.
+
+        Args:
+            driver: The Selenium WebDriver instance.
+        """
+        self.navigation = Navigation(driver)
+
+    def navigate_through_steps(self, steps):
+        """Navigates through a series of steps."""
+        self.navigation.execute_navigation(steps)

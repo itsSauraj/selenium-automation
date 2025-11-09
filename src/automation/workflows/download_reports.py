@@ -1,8 +1,8 @@
 import os
-from automation.ui.navigation import Navigation
+from automation.ui.navigation import Navigation, PageNavigation
 from automation.utilities.excel_reader import get_orders_from_excel
 from automation.utilities.file_manager import create_directory_if_not_exists
-from automation.config.settings import DOWNLOAD_PATH
+from automation.config.settings import settings
 from automation.utilities.logger import logger
 
 class DownloadReportsWorkflow:
@@ -34,7 +34,7 @@ class DownloadReportsWorkflow:
             logger.info(f"Processing order: {order_id}")
 
             # Create a directory for the order
-            order_download_path = os.path.join(DOWNLOAD_PATH, str(order_id))
+            order_download_path = os.path.join(settings.DOWNLOAD_PATH, str(order_id))
             create_directory_if_not_exists(order_download_path)
 
             for report in reports:

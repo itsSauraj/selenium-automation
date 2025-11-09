@@ -1,7 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
-from automation.config.settings import DOWNLOAD_PATH
+from automation.config.settings import settings
 from automation.utilities.logger import logger
 
 class SessionManager:
@@ -29,9 +29,10 @@ class SessionManager:
             # Configure Chrome options
             chrome_options = webdriver.ChromeOptions()
             prefs = {
-                "download.default_directory": DOWNLOAD_PATH,
+                "download.default_directory": settings.DOWNLOAD_PATH,
                 "download.prompt_for_download": False,
                 "download.directory_upgrade": True,
+                "safebrowsing.enabled": True,
                 "profile.default_content_setting_values.automatic_downloads": 1,
             }
             chrome_options.add_experimental_option("prefs", prefs)

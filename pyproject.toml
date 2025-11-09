@@ -11,6 +11,9 @@ selenium = "^4.38.0"
 openpyxl = "^3.1.5"
 python-dotenv = "^1.2.1"
 webdriver-manager = "^4.0.2"
+pydantic = "^2.12.4"
+pydantic-settings = "^2.11.0"
+pandas = "^2.3.3"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.2"

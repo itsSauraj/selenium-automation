@@ -1,19 +1,40 @@
+from pydantic_settings import BaseSettings
+from pydantic import HttpUrl
+from typing import Optional
 import os
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
 
 # Get the absolute path of the project root directory
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-# Environment variables
-BASE_URL = os.getenv("BASE_URL")
-USERNAME = os.getenv("USERNAME")
-PASSWORD = os.getenv("PASSWORD")
+class Settings(BaseSettings):
+    """Configuration settings for the automation framework."""
+    # Environment variables
+    BASE_URL: HttpUrl
+    USER_EMAIL: str
+    USER_PASSWORD: str
 
-# File paths
-DOWNLOAD_PATH = os.path.join(PROJECT_ROOT, os.getenv("DOWNLOAD_PATH", "downloads"))
-UPLOAD_PATH = os.path.join(PROJECT_ROOT, os.getenv("UPLOAD_PATH", "uploads"))
-LOG_FILE_PATH = os.path.join(PROJECT_ROOT, os.getenv("LOG_FILE_PATH", "logs/run.log"))
-EXCEL_FILE_PATH = os.path.join(PROJECT_ROOT, os.getenv("EXCEL_FILE_PATH", "data/navigation.xlsx"))
+    # File paths
+    DOWNLOAD_PATH: str = os.path.join(PROJECT_ROOT, "downloads")
+    UPLOAD_PATH: str = os.path.join(PROJECT_ROOT, "uploads")
+    LOG_FILE_PATH: str = os.path.join(PROJECT_ROOT, "logs/run.log")
+    EXCEL_FILE_PATH: str = os.path.join(PROJECT_ROOT, "data/navigation.xlsx")
+
+    class Config:
+        env_file = os.path.join(PROJECT_ROOT, ".env")
+        env_file_encoding = "utf-8"
+
+    def set(self, key: str, value):
+        """Update any setting dynamically at runtime.
+        Args:
+            key (str): The setting key to update.
+            value: The new value for the setting.
+        Raises:
+            AttributeError: If the key does not correspond to any setting.
+        """
+        if hasattr(self, key):
+            setattr(self, key, value)
+        else:
+            raise AttributeError(f"⚠️ Invalid setting key: '{key}'")
+
+"""Create a singleton settings instance to be used across the framework."""
+settings = Settings()

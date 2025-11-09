@@ -7,4 +7,8 @@ class LoginPageLocators:
     USERNAME_FIELD = (By.NAME, "email")
     PASSWORD_FIELD = (By.NAME, "password")
 
-# Add other page locator classes here as needed
+class DashboardPageLocators:
+    """
+    A class for dashboard page locators. All dashboard page locators should be defined here.
+    """
+    DASHBOARD_TITLE = (By.TAG_NAME, "title")
