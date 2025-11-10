@@ -29,10 +29,14 @@ class SessionManager:
                 "download.default_directory": settings.DOWNLOAD_PATH,
                 "download.prompt_for_download": False,
                 "download.directory_upgrade": True,
-                "safebrowsing.enabled": True,
+                "safebrowsing.enabled": False,  # Changed to False - can block downloads
                 "profile.default_content_setting_values.automatic_downloads": 1,
+                "plugins.always_open_pdf_externally": True,
+                "profile.default_content_settings.popups": 0,
             }
+            # chrome_options.add_argument("--headless=new")  #only if want to run as headless
             chrome_options.add_experimental_option("prefs", prefs)
+            chrome_options.add_argument("--force-device-scale-factor=0.75")
             self.driver = webdriver.Chrome(
                 service=ChromeService(ChromeDriverManager().install()),
                 options=chrome_options

@@ -2,7 +2,7 @@
 name = "selenium-automation"
 version = "0.1.0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["Saurabh Yadav sauraj.contact@gmail.com"]
 packages = [{include = "automation", from = "src"}]
 
 [tool.poetry.dependencies]
