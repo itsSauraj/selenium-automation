@@ -52,6 +52,7 @@ class InboundPageLocators:
     """
     SETTLEMENTS_TAB = (By.ID, "tab_SettlementComplete")
     SEARCH_FIELD = (By.ID, "tb_RecyclingOrderListSearch")
+    SEARCH_FIELD_SETTLEMENTS = (By.ID, "div_PrintDialogSettlementNew")
 
     TABLE_ID = (By.ID, "g_RecyclingOrderList")
 
@@ -86,3 +87,9 @@ class AuditReportsMapper:
     SEARCH_FILED = (By.ID, "ag-input-id-60")
     
     CELL_LOCATION = (By.CSS_SELECTOR, "(//*[@col-id='RecyclingOrderAutoName'])[last()]")
+
+class SettlementReportLocators:
+    """
+    A class for Settlement Report locators. All locators for this page should be defined here.
+    """
+    SEARCH_FIELD = (By.ID, "tb_Search_All")

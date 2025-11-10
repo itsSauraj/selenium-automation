@@ -1,4 +1,10 @@
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import ElementClickInterceptedException, TimeoutException
+from selenium.webdriver.common.by import By
+from automation.utilities.logger import logger
+import time
 from automation.utilities.wait_utils import WaitUtils
 from automation.utilities.action_utils import Actions
 
@@ -65,3 +71,43 @@ class PageBase:
             str: The title of the current page.
         """
         return self.driver.title
+    
+    def safe_click(self, locator, timeout=15, scroll=True):
+        """
+        Wait until clickable, try click; on intercept hide overlays and retry once.
+        locator: tuple (By.*, value)
+        """
+        try:
+            el = WebDriverWait(self.driver, timeout).until(EC.element_to_be_clickable(locator))
+            if scroll:
+                self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", el)
+            try:
+                el.click()
+                return el
+            except ElementClickInterceptedException:
+                logger.warning("Click intercepted, attempting to clear overlays and retry.")
+                self.close_known_overlays()
+                time.sleep(0.5)
+                self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", el)
+                el.click()
+                return el
+        except TimeoutException:
+            logger.error(f"Element not clickable: {locator}")
+            return None
+
+    def close_known_overlays(self):
+        """Hide known blocking overlays/popups used by the app."""
+        self.driver.execute_script("""
+            const selectors = [
+                '.recycling-orders-popup-inner',
+                '#gritter-notice-wrapper',
+                '.ui-widget-overlay',
+                '.modal-backdrop'   // add any other overlay selectors here
+            ];
+            selectors.forEach(s => {
+                document.querySelectorAll(s).forEach(el => {
+                    el.style.display = 'none';
+                    el.style.visibility = 'hidden';
+                });
+            });
+        """)
