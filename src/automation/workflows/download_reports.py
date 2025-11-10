@@ -116,98 +116,144 @@ class ReportsDownloader(PageBase):
         super().__init__(driver)
 
 
-    def download_inbound_page(self, locator=None, report_name=None, order_download_path=None, order_id=None, report_type=None):
+    def download_inbound_page(
+        self,
+        locator=None,
+        report_name=None,
+        order_download_path=None,
+        order_id=None,
+        report_type=None
+    ):
+        """Downloads inbound page reports safely and reliably."""
 
-        # TODO: Implement the decorator based check here
-        if locator is None and locator != ReportMapperKeys.INBOUND_PAGE:
+        # --- validation ---
+        if locator is None or locator != ReportMapperKeys.INBOUND_PAGE:
             logger.error("Invalid locator provided for downloading inbound page report.")
             return False
 
         if self.driver is None:
             logger.error("Invalid driver provided for downloading inbound page report.")
             return False
-        
+
         if report_mapper.get_report_key(report_name) is None:
             logger.error("Invalid report name provided for downloading inbound page report.")
             return False
 
-        if report_type is None:
+        if not report_type:
             logger.error("Invalid report type provided for downloading inbound page report.")
             return False
 
+        # --- navigate to inbound page ---
         page_url = report_mapper_locator.get_page_url(report_mapper_locator.INBOUND_PAGE)
 
         if self.driver.current_url != page_url:
             self.driver.get(page_url)
-            time.sleep(5)
+            self.wait.wait_for_page_load()
             self.driver.execute_script("""
                 const el = document.getElementById('gritter-notice-wrapper');
-                if (el) {
-                    el.style.display = 'none';
-                    el.style.visibility = 'hidden';
-                }
+                if (el) { el.style.display = 'none'; el.style.visibility = 'hidden'; }
             """)
+            self.close_known_overlays()
 
-        self.click(InboundPageLocators.SETTLEMENTS_TAB)
-        time.sleep(5)
-        
-        orders_search_field = self.wait.wait_for_element_to_be_visible(InboundPageLocators.SEARCH_FIELD)
-        if orders_search_field:
-            orders_search_field.send_keys(order_id)
-            time.sleep(2)
-            orders_search_field.send_keys(Keys.ENTER)
-            time.sleep(5)
-            order_element = self.wait.wait_for_element_to_be_visible((By.CSS_SELECTOR, f"td[title='{order_id}']"), timeout=30)
+        # --- click Settlements tab ---
+        self.close_known_overlays()
+        self.safe_click(InboundPageLocators.SETTLEMENTS_TAB, timeout=15)
+        self.wait.wait_for_element_to_be_visible(InboundPageLocators.SEARCH_FIELD, timeout=10)
 
-            if order_element:
-                order_checkbox = self.wait.wait_for_element_to_be_visible(InboundPageLocators.ORDER_CHECKBOX)
-                if order_checkbox:
-                    order_checkbox.click()
-                    time.sleep(2)
-                    if order_checkbox.is_selected() == False:
-                        order_checkbox.click()
-                        time.sleep(2)
-
-                    if report_type.lower() == "standard":
-                        download_button = self.wait.wait_for_element_to_be_visible(InboundPageLocators.STANDARD_DOWNLOAD_BUTTON)
-                        if download_button:
-                            download_button.click()
-                            self.wait.wait_for_element_to_be_visible(InboundPageLocators.REPORTS_LIST_CONTAINER)
-
-                            parts = ["cb", "Doc", report_name]
-                            last_part = "_".join(word.capitalize() for word in parts[-1].split())
-                            report_id = "_".join([*parts[:-1], last_part])
-
-                            report_check_box = self.wait.wait_for_element_to_be_visible((By.ID, report_id))
-
-                            parent_div = report_check_box.find_element(By.XPATH, "./ancestor::div[contains(@class, 'print-dialog-doctype')]")
-
-                            # Find ALL checkboxes inside that parent section (including nested ones)
-                            related_checkboxes = parent_div.find_elements(By.XPATH, ".//input[@type='checkbox']")
-
-                            # 4️⃣ Loop through and check each one
-                            for checkbox in related_checkboxes:
-                                try:
-                                    if not checkbox.is_selected():
-                                        checkbox.click()
-                                except Exception as e:
-                                    logger.error(f"Error selecting checkbox: {e}")
-
-                            # final_download_button = self.wait.wait_for_element_to_be_visible((By.XPATH, "//button[.//span[normalize-space(text())='Download']]"))
-                            final_download_button = self.wait.wait_for_element_to_be_visible((By.XPATH, "//*[@id='dlgPrint_ButtonPreview']/preceding-sibling::*[1]"), timeout=10)
-                            if final_download_button:
-                                final_download_button.click()
-                                time.sleep(30)  # Wait for download to initiate
-                                logger.info(f"Download initiated for report: {report_name} of type: {report_type} for Order ID: {order_id}")
-                                save_state.add(order_id, report_name, downloaded=True, uploaded=False)
-                                
-                            else:
-                                logger.error("Final download button not found. Cannot complete download.")
-                        else:
-                            logger.error("Download button not found. Cannot complete download.")
-                    else:
-                        download_button = self.wait.wait_for_element_to_be_visible(InboundPageLocators.DOWNLOAD_BUTTON_NEW)
-                else:
-                    logger.error("Order checkbox not found. Cannot complete download.")
-        else:
+        # --- search for order ID ---
+        orders_search_field = self.wait.wait_for_element_to_be_visible(InboundPageLocators.SEARCH_FIELD, timeout=15)
+        if not orders_search_field:
             logger.error("Search field not found. Cannot complete search.")
+            return False
+
+        orders_search_field.clear()
+        orders_search_field.send_keys(order_id)
+        orders_search_field.send_keys(Keys.ENTER)
+        self.wait.wait_for_ajax()
+
+        # --- locate the order row ---
+        order_cell_locator = (By.CSS_SELECTOR, f"td[title='{order_id}']")
+        order_cell = self.wait.wait_for_element_to_be_visible(order_cell_locator, timeout=30)
+        if not order_cell:
+            logger.error(f"Order {order_id} not found in the table.")
+            return False
+
+        # --- find checkbox in that row ---
+        try:
+            row = order_cell.find_element(By.XPATH, "./ancestor::tr[1]")
+            checkbox = row.find_element(By.XPATH, ".//td[1]//input[@type='checkbox']")
+            self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", checkbox)
+            if not checkbox.is_selected():
+                try:
+                    checkbox.click()
+                except Exception:
+                    self.close_known_overlays()
+                    time.sleep(0.5)
+                    checkbox.click()
+            logger.info(f"Selected order checkbox for Order ID: {order_id}")
+        except Exception as e:
+            logger.error(f"Could not select checkbox for Order ID: {order_id}. Error: {e}")
+            return False
+
+        # --- handle report type ---
+        if report_type.lower() == "standard":
+            download_button = self.wait.wait_for_element_to_be_visible(InboundPageLocators.STANDARD_DOWNLOAD_BUTTON, timeout=15)
+        else:
+            download_button = self.wait.wait_for_element_to_be_visible(InboundPageLocators.DOWNLOAD_BUTTON_NEW, timeout=15)
+
+        if not download_button:
+            logger.error("Download button not found. Cannot complete download.")
+            return False
+
+        # --- click the download button ---
+        self.safe_click(
+            InboundPageLocators.STANDARD_DOWNLOAD_BUTTON
+            if report_type.lower() == "standard"
+            else InboundPageLocators.DOWNLOAD_BUTTON_NEW
+        )
+
+        # --- wait for reports list ---
+        self.wait.wait_for_element_to_be_visible(InboundPageLocators.REPORTS_LIST_CONTAINER, timeout=15)
+
+        # --- build report checkbox id ---
+        parts = ["cb", "Doc", report_name]
+        last_part = "_".join(word.capitalize() for word in parts[-1].split())
+        report_id = "_".join([*parts[:-1], last_part])
+
+        report_check_box = self.wait.wait_for_element_to_be_visible((By.ID, report_id), timeout=10)
+        if not report_check_box:
+            logger.error(f"Report checkbox not found for: {report_id}")
+            return False
+
+        # --- select all related checkboxes under same group ---
+        parent_div = report_check_box.find_element(By.XPATH, "./ancestor::div[contains(@class, 'print-dialog-doctype')]")
+        related_checkboxes = parent_div.find_elements(By.XPATH, ".//input[@type='checkbox']")
+
+        for checkbox in related_checkboxes:
+            try:
+                self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", checkbox)
+                if not checkbox.is_selected():
+                    checkbox.click()
+            except Exception as e:
+                logger.warning(f"Skipping checkbox {checkbox.get_attribute('id')}, reason: {e}")
+
+        # --- click final download button ---
+        final_download_button = self.wait.wait_for_element_to_be_visible(
+            (By.XPATH, "//button[.//span[normalize-space(text())='Download']]"),
+            timeout=10
+        )
+
+        if final_download_button:
+            try:
+                self.safe_click((By.XPATH, "//button[.//span[normalize-space(text())='Download']]"), timeout=10)
+                logger.info(f"Download initiated for report: {report_name} (Order: {order_id})")
+                save_state.add(order_id, report_name, downloaded=True, uploaded=False)
+                self.wait.wait_for_download_to_complete(order_download_path)
+            except Exception as e:
+                logger.error(f"Failed to click final download button: {e}")
+                return False
+        else:
+            logger.error("Final download button not found.")
+            return False
+
+        return True
