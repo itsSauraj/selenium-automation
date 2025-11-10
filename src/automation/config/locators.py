@@ -52,6 +52,7 @@ class InboundPageLocators:
     """
     SETTLEMENTS_TAB = (By.ID, "tab_SettlementComplete")
     SEARCH_FIELD = (By.ID, "tb_RecyclingOrderListSearch")
+    SEARCH_FIELD_SETTLEMENTS = (By.ID, "div_PrintDialogSettlementNew")
 
     TABLE_ID = (By.ID, "g_RecyclingOrderList")
 
@@ -63,3 +64,9 @@ class InboundPageLocators:
     REPORTS_LIST_CONTAINER = (By.ID, "div_ReportsContainer")
 
     FILTER_DROPDOWN = (By.XPATH, "//select[@id='filter']")
+
+class SettlementReportLocators:
+    """
+    A class for Settlement Report locators. All locators for this page should be defined here.
+    """
+    SEARCH_FIELD = (By.ID, "tb_Search_All")

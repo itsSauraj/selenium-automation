@@ -13,7 +13,7 @@ def setup_logger():
 
     # Create a logger
     logger = logging.getLogger("automation_logger")
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
     # Create a rotating file handler
     handler = RotatingFileHandler(

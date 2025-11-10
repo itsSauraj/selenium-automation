@@ -8,7 +8,7 @@ IN-3886,Settlement Report - ALL ASSETS,false,false
 IN-3886,AP Invoice / AR Invoice,false,false
 IN-3886,Audit Report Excel,false,false
 IN-3886,Bill of Lading,false,false
-IN-3886,Settlement Summary,false,false
-IN-3886,Picture Report,false,false
+IN-3886,Settlement Summary,true,false
+IN-3886,Picture Report,true,false
 IN-3886,Receiving Report,false,false
 IN-3886,Receiving Summary Report,false,false

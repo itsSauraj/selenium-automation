@@ -2,6 +2,7 @@ import os
 import time
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException, WebDriverException
 from automation.utilities.logger import logger
 
@@ -109,3 +110,19 @@ class WaitUtils:
 
         logger.warning("Download did not complete within timeout.")
         return False
+    
+    def wait_for_overlay_to_disappear(self, timeout=20):
+        """Waits for any jQuery UI overlay to disappear before proceeding."""
+        try:
+            WebDriverWait(self.driver, timeout).until_not(
+                EC.presence_of_element_located((By.CLASS_NAME, "ui-widget-overlay"))
+            )
+            logger.debug("Overlay cleared — safe to click next element.")
+            return True
+        except TimeoutException:
+            logger.warning("Overlay still present after waiting; forcing hide via JS.")
+            self.driver.execute_script("""
+                document.querySelectorAll('.ui-widget-overlay').forEach(o => o.style.display = 'none');
+            """)
+            return False
+
