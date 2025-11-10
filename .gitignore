@@ -14,6 +14,16 @@ poetry.lock
 logs/
 *.log
 
+screenshots/**/*
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+application_state/**/*
+downloads/**/*
+
+
 # Data
 downloads/
 uploads/
