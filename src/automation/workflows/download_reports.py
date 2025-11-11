@@ -313,3 +313,55 @@ class ReportsDownloader(PageBase):
                             logger.warning("This type of report download is not Implented. Skipping...")
                 else:
                     logger.error("Unable to load page")
+                    
+        def download_audit_report(self, locator=None, report_name=None, order_download_path=None, order_id=None, report_type=None):
+
+            if locator is None and locator != ReportMapperKeys.AUDIT_ORDERS_PAGE:
+                logger.error("Invalid locator provided for downloading inbound page report.")
+                return False
+
+            if self.driver is None:
+                logger.error("Invalid driver provided for downloading inbound page report.")
+                return False
+            
+            if report_mapper.get_report_key(report_name) is None:
+                logger.error("Invalid report name provided for downloading inbound page report.")
+                return False
+
+            if report_type is None:
+                logger.error("Invalid report type provided for downloading inbound page report.")
+                return False
+
+            page_url = report_mapper_locator.get_page_url(report_mapper_locator.AUDIT_ORDERS_PAGE)
+            
+            if self.driver.current_url != page_url:
+                self.driver.get(page_url)
+                time.sleep(2)
+                self.driver.execute_script("""
+                    const el = document.getElementById('gritter-notice-wrapper');
+                    if (el) {
+                        el.style.display = 'none';
+                        el.style.visibility = 'hidden';
+                    }
+                """)
+                
+            time.sleep(2)
+            
+            search_filed = self.wait.wait_for_element_to_be_visible(AuditReportsMapper.SEARCH_FILED)
+            if search_filed:
+                search_filed.clear()
+                search_filed.send_keys(order_id)
+                time.sleep(2)
+                search_filed.send_keys(Keys.ENTER)
+                time.sleep(2)
+                
+                table_cell = self.wait.wait_for_element_to_be_visible(AuditReportsMapper.CELL_LOCATION, timeout=10)
+                if table_cell:
+                    table_cell.click()
+                    time.sleep(2)
+                    
+                    table_cell.send_keys(Keys.CONTROL, 'a')    
+            
+            
+           
+

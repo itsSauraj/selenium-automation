@@ -13,9 +13,6 @@ class DashboardPageLocators:
     A class for dashboard page locators. All dashboard page locators should be defined here.
     """
     DASHBOARD_TITLE = (By.TAG_NAME, "title")
-    
-class AuditReportsMapper:
-    SEARCH_FILED = (By.ID, "ag-input-id-60")
 
 class ReportMapperKeys:
     """A class to map report types to their download methods."""
@@ -84,3 +81,8 @@ class TransactionalPageLoaders:
     DOWNLOAD_BUTTON_NEW = (By.ID, "bt_OpenReportPrintDialog")
     
     AR_REPORT_CHECKBOX = (By.ID, "cb_Doc_AR_Invoice")
+    
+class AuditReportsMapper:
+    SEARCH_FILED = (By.ID, "ag-input-id-60")
+    
+    CELL_LOCATION = (By.CSS_SELECTOR, "(//*[@col-id='RecyclingOrderAutoName'])[last()]")
