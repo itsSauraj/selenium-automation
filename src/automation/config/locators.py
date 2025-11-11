@@ -25,7 +25,7 @@ class ReportMapperKeys:
     PAGE_MAP = {
         INBOUND_PAGE: settings.make_url("/Admin/RecyclingOrders.aspx"),
         SETTLEMENT_REPORT: settings.make_url("/Admin/SettlementReport.aspx"),
-        TRANSACTION_HISTORY_REPORT: settings.make_url("/Admin/TransactionHistoryReport.aspx"),
+        TRANSACTION_HISTORY_REPORT: settings.make_url("/Admin/SettlementList.aspx"),
         AUDIT_ORDERS_PAGE: settings.make_url("/Admin/AuditOrders.aspx"),
     }
 
@@ -64,6 +64,29 @@ class InboundPageLocators:
     REPORTS_LIST_CONTAINER = (By.ID, "div_ReportsContainer")
 
     FILTER_DROPDOWN = (By.XPATH, "//select[@id='filter']")
+    
+    
+class TransactionalPageLoaders:
+    """
+        A class for Inbound Page locators. All locators for this page should be defined here.
+    """
+    SEARCH_FIELD = (By.ID, "tb_Search_All")
+    
+    SALES_ORDER_HISTORY = (By.ID, "a_RecyclingOrder_LinkedSalesOrder")
+    INVOICE_TAB = (By.ID, "tab_Invoice")
+    
+    # INVOICE_TAB_TABLE = (By.ID, "jqg_SalesOrderReceive_Invoices")
+    INVOICE_TAB_TABLE_CHECKBOX = (By.XPATH, "//table[@id='jqg_SalesOrderReceive_Invoices']//tr[2]/td[1]//input[@type='checkbox']")
+    
+    STANDARD_DOWNLOAD_BUTTON = (By.ID, "bt_PrintDownloadInvoicePdf")
+    DOWNLOAD_BUTTON_NEW = (By.ID, "bt_OpenReportPrintDialog")
+    
+    AR_REPORT_CHECKBOX = (By.ID, "cb_Doc_AR_Invoice")
+    
+class AuditReportsMapper:
+    SEARCH_FILED = (By.ID, "ag-input-id-60")
+    
+    CELL_LOCATION = (By.CSS_SELECTOR, "(//*[@col-id='RecyclingOrderAutoName'])[last()]")
 
 class SettlementReportLocators:
     """

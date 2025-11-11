@@ -46,10 +46,19 @@ class Settings(BaseSettings):
 
         Example:
         make_url("/Admin/RecyclingOrders.aspx")
-        → "https://example.com/Admin/RecyclingOrders.aspx"
+        -> "https://example.com/Admin/RecyclingOrders.aspx"
         """
         return urljoin(str(self.BASE_URL), route)
     
+    def join_url(self, base: str, query: str) -> str:
+        """
+        Safely join 2 urls with query params
+        
+        Example:
+        join_url("https://example.com/route.aspx", "?orderId=00000")
+        -> "https://example.com/route.aspx?orderId=00000"
+        """
+        return urljoin(str(base), str(query))
 
 """Create a singleton settings instance to be used across the framework."""
 settings = Settings()

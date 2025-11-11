@@ -6,6 +6,7 @@ from selenium.webdriver.common.by import By
 from automation.utilities.logger import logger
 import time
 from automation.utilities.wait_utils import WaitUtils
+from automation.utilities.action_utils import Actions
 
 class PageBase:
     """
@@ -22,6 +23,7 @@ class PageBase:
         """
         self.driver = driver
         self.wait = WaitUtils(driver)
+        self.actions = Actions(driver)
 
     def click(self, by_locator):
         """
