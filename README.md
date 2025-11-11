@@ -37,8 +37,12 @@ Everything is structured cleanly using Poetry for dependency and environment man
     git clone <repository-url>
     cd selenium-automation
     ```
+2.  **Generating Poetry Lock file and environment:**
+    ```bash
+    poetry lock
+    ```
 
-2.  **Install Dependencies:**
+3.  **Install Dependencies:**
     Open your terminal, navigate to the `selenium-automation` directory, and run the following command to install the project dependencies:
     ```bash
     poetry install
