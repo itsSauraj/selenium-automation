@@ -30,7 +30,6 @@ class ReportDownloader(PageBase):
 
     def download_inbound_page(self, locator=None, report_name=None, order_download_path=None, order_id=None, report_type=None):
         """
-        FINAL WORKING VERSION
         Handles RazorERP modal lifecycle perfectly across multiple downloads.
         Ensures overlays are cleaned, dialogs reset, and no click intercepts happen.
         """
@@ -75,15 +74,6 @@ class ReportDownloader(PageBase):
             return False
 
         try:
-            # self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", orders_search_field)
-            # orders_search_field.click()
-            # self.driver.execute_script("""
-            #     const el = arguments[0];
-            #     el.value = '';
-            #     el.dispatchEvent(new Event('input', { bubbles: true }));
-            #     el.dispatchEvent(new Event('change', { bubbles: true }));
-            # """, orders_search_field)
-            # time.sleep(0.5)
             orders_search_field.clear()
             time.sleep(1)
             orders_search_field.send_keys(order_id)
@@ -132,6 +122,7 @@ class ReportDownloader(PageBase):
         # self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", download_button)
         try:
             download_button.click()
+            time.sleep(10)
         except Exception:
             self.driver.execute_script("arguments[0].click();", download_button)
         logger.info("Clicked Print/Download button; waiting for modal.")
@@ -282,7 +273,7 @@ class ReportDownloader(PageBase):
                         if report_type.lower() == 'standard':
                             download_button = self.wait.wait_for_element_to_be_visible(TransactionalPageLoaders.STANDARD_DOWNLOAD_BUTTON)
                             download_button.click()
-                            time.sleep(2)
+                            time.sleep(10)
                             
                             dialog_checkbox = self.wait.wait_for_element_to_be_visible(TransactionalPageLoaders.AR_REPORT_CHECKBOX)
                             dialog_checkbox.click()
