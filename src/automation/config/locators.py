@@ -52,9 +52,7 @@ class InboundPageLocators:
     """
     SETTLEMENTS_TAB = (By.ID, "tab_SettlementComplete")
     SEARCH_FIELD = (By.ID, "tb_RecyclingOrderListSearch")
-    SEARCH_FIELD_SETTLEMENTS = (By.ID, "div_PrintDialogSettlementNew")
-
-    TABLE_ID = (By.ID, "g_RecyclingOrderList")
+    SEARCH_FIELD_SETTLEMENTS = (By.ID, "div_PrintDialog")
 
     ORDER_CHECKBOX = (By.XPATH, "//table[@id='g_RecyclingOrderList']//tr[2]/td[1]//input[@type='checkbox']")
 

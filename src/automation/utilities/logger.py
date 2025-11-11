@@ -22,7 +22,7 @@ def setup_logger():
 
     # Create a formatter and set it for the handler
     formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        "%(asctime)s - %(funcName)s:%(lineno)d - %(name)s - %(levelname)s - %(message)s"
     )
     handler.setFormatter(formatter)
 
