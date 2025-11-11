@@ -11,7 +11,8 @@ from automation.utilities.save_download_state import save_state
 from automation.utilities.file_manager import create_directory_if_not_exists
 from automation.config.settings import settings
 from automation.config.excel_mapper import report_mapper
-from automation.config.locators import report_mapper_locator, ReportMapperKeys, InboundPageLocators
+from automation.config.locators import ( report_mapper_locator, ReportMapperKeys, 
+    InboundPageLocators, AuditReportsMapper, TransactionalPageLoaders )
 from automation.utilities.logger import logger
 
 class DownloadReportsWorkflow(PageBase):
@@ -47,7 +48,7 @@ class DownloadReportsWorkflow(PageBase):
             logger.error("No orders found in the Excel file.")
             return
 
-        for order_id in orders:
+        for order_id in orders:            
             logger.info(f"Setting up download for Order ID: {order_id}")
             reports_download_path = os.path.join(settings.DOWNLOAD_PATH, str(order_id))
             create_directory_if_not_exists(reports_download_path)
@@ -85,11 +86,13 @@ class DownloadReportsWorkflow(PageBase):
 
                 logger.info(f"Downloading report: {report_name} of type: {report_type} for Order ID: {order_id}")
 
-                if report_mapper.get_report_key(report_name) is None:
+                report_name_map = report_mapper.get_report_key(report_name)
+                logger.info(f"Report map for report : {report_name} is map: {report_name_map}")
+                if report_name_map is None:
                     logger.warning(f"Report name '{report_name}' not recognized. Skipping download.")
                     continue
 
-                if report_mapper.get_report_key(report_name) is ReportMapperKeys.INBOUND_PAGE:
+                if report_name_map == ReportMapperKeys.INBOUND_PAGE:
                     self.download_function.download_inbound_page(
                         locator=ReportMapperKeys.INBOUND_PAGE,
                         report_name=report_name,
@@ -97,6 +100,15 @@ class DownloadReportsWorkflow(PageBase):
                         order_id=order_id,
                         report_type=report_type
                     )
+                elif report_name_map == ReportMapperKeys.TRANSACTION_HISTORY_REPORT:
+                    self.download_function.download_transaction_report(
+                        locator=ReportMapperKeys.TRANSACTION_HISTORY_REPORT, 
+                        report_name=report_name, 
+                        order_download_path=order_download_path, 
+                        order_id=order_id, 
+                        report_type=report_type
+                    )
+                
 
         logger.info("Download reports workflow completed.")
 
@@ -139,7 +151,7 @@ class ReportsDownloader(PageBase):
 
         if self.driver.current_url != page_url:
             self.driver.get(page_url)
-            time.sleep(5)
+            time.sleep(2)
             self.driver.execute_script("""
                 const el = document.getElementById('gritter-notice-wrapper');
                 if (el) {
@@ -149,20 +161,21 @@ class ReportsDownloader(PageBase):
             """)
 
         self.click(InboundPageLocators.SETTLEMENTS_TAB)
-        time.sleep(5)
+        time.sleep(2)
         
         orders_search_field = self.wait.wait_for_element_to_be_visible(InboundPageLocators.SEARCH_FIELD)
         if orders_search_field:
+            orders_search_field.clear()
             orders_search_field.send_keys(order_id)
             time.sleep(2)
             orders_search_field.send_keys(Keys.ENTER)
-            time.sleep(5)
+            time.sleep(2)
             order_element = self.wait.wait_for_element_to_be_visible((By.CSS_SELECTOR, f"td[title='{order_id}']"), timeout=30)
 
             if order_element:
                 order_checkbox = self.wait.wait_for_element_to_be_visible(InboundPageLocators.ORDER_CHECKBOX)
                 if order_checkbox:
-                    order_checkbox.click()
+                    order_element.click()
                     time.sleep(2)
                     if order_checkbox.is_selected() == False:
                         order_checkbox.click()
@@ -200,7 +213,7 @@ class ReportsDownloader(PageBase):
                                 time.sleep(30)  # Wait for download to initiate
                                 logger.info(f"Download initiated for report: {report_name} of type: {report_type} for Order ID: {order_id}")
                                 save_state.add(order_id, report_name, downloaded=True, uploaded=False)
-                                
+                                time.sleep(30)
                             else:
                                 logger.error("Final download button not found. Cannot complete download.")
                         else:
@@ -211,3 +224,92 @@ class ReportsDownloader(PageBase):
                     logger.error("Order checkbox not found. Cannot complete download.")
         else:
             logger.error("Search field not found. Cannot complete search.")
+            
+            
+    def download_transaction_report(self, locator=None, report_name=None, order_download_path=None, order_id=None, report_type=None):
+
+        if locator is None and locator != ReportMapperKeys.TRANSACTION_HISTORY_REPORT:
+            logger.error("Invalid locator provided for downloading inbound page report.")
+            return False
+
+        if self.driver is None:
+            logger.error("Invalid driver provided for downloading inbound page report.")
+            return False
+        
+        if report_mapper.get_report_key(report_name) is None:
+            logger.error("Invalid report name provided for downloading inbound page report.")
+            return False
+
+        if report_type is None:
+            logger.error("Invalid report type provided for downloading inbound page report.")
+            return False
+
+        page_url = report_mapper_locator.get_page_url(report_mapper_locator.TRANSACTION_HISTORY_REPORT)
+
+        if self.driver.current_url != page_url:
+            self.driver.get(page_url)
+            time.sleep(2)
+            self.driver.execute_script("""
+                const el = document.getElementById('gritter-notice-wrapper');
+                if (el) {
+                    el.style.display = 'none';
+                    el.style.visibility = 'hidden';
+                }
+            """)
+            
+        time.sleep(2)
+        
+        orders_search_field = self.wait.wait_for_element_to_be_visible(TransactionalPageLoaders.SEARCH_FIELD)
+        if orders_search_field:
+            orders_search_field.send_keys(order_id)
+            time.sleep(2)
+            orders_search_field.send_keys(Keys.ENTER)
+            time.sleep(2)
+            order_element = self.wait.wait_for_element_to_be_visible((By.CSS_SELECTOR, f"td[title='{order_id}']"), timeout=30)
+            
+            if order_element:
+                self.actions.double_click(order_element)
+                time.sleep(2)
+                tabs = self.driver.window_handles
+                primary = tabs[0]
+                redirected = tabs[1]
+                
+                self.driver.switch_to.window(redirected)
+                redirect_url = self.driver.current_url
+                
+                self.driver.close()
+                self.driver.switch_to.window(primary)
+                self.driver.get(redirect_url)
+                time.sleep(2)
+                
+                sales_transaction_order = self.wait.wait_for_element_to_be_visible(TransactionalPageLoaders.SALES_ORDER_HISTORY, timeout=30)
+                
+                if sales_transaction_order:
+                    logger.info("Settle Table Found")
+                    link = sales_transaction_order.get_attribute("href")
+                    self.driver.get(link)
+                    time.sleep(3)
+                    invoices_tab = self.wait.wait_for_element_to_be_visible(TransactionalPageLoaders.INVOICE_TAB)
+                    
+                    if invoices_tab:
+                        invoices_tab.click()
+                        time.sleep(1)
+                        checkbox = self.wait.wait_for_element_to_be_visible(TransactionalPageLoaders.INVOICE_TAB_TABLE_CHECKBOX)
+                        checkbox.click()
+                        
+                        if report_type.lower() == 'standard':
+                            download_button = self.wait.wait_for_element_to_be_visible(TransactionalPageLoaders.STANDARD_DOWNLOAD_BUTTON)
+                            download_button.click()
+                            time.sleep(2)
+                            
+                            dialog_checkbox = self.wait.wait_for_element_to_be_visible(TransactionalPageLoaders.AR_REPORT_CHECKBOX)
+                            dialog_checkbox.click()
+                            time.sleep(1)
+                            
+                            final_download_button = self.wait.wait_for_element_to_be_visible((By.XPATH, "//*[@id='dlgPrint_ButtonPreview']/preceding-sibling::*[1]"), timeout=2)
+                            final_download_button.click()
+                            logger.info(f"Download Button Clicked for report {report_name}")
+                        else:
+                            logger.warning("This type of report download is not Implented. Skipping...")
+                else:
+                    logger.error("Unable to load page")
