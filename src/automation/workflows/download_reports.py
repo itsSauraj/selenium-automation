@@ -11,7 +11,7 @@ from automation.config.excel_mapper import report_mapper
 from automation.config.locators import ( report_mapper_locator, ReportMapperKeys )
 
 from automation.utilities.logger import logger
-from .upload_reports import UploadReportsWorkflow
+# from .upload_reports import UploadReportsWorkflow
 
 class DownloadReportsWorkflow(PageBase):
     """
