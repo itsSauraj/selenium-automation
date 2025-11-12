@@ -13,39 +13,7 @@ class DashboardPageLocators:
     A class for dashboard page locators. All dashboard page locators should be defined here.
     """
     DASHBOARD_TITLE = (By.TAG_NAME, "title")
-
-class ReportMapperKeys:
-    """A class to map report types to their download methods."""
-    INBOUND_PAGE = "InboundPageSettlementsLocators"
-    SETTLEMENT_REPORT = "SettlementReportLocator"
-    TRANSACTION_HISTORY_REPORT = "TransactionHistoryReportLocator"
-    AUDIT_ORDERS_PAGE = "AuditOrdersPageLocator"
-
-
-    PAGE_MAP = {
-        INBOUND_PAGE: settings.make_url("/Admin/RecyclingOrders.aspx"),
-        SETTLEMENT_REPORT: settings.make_url("/Admin/SettlementList.aspx"),
-        TRANSACTION_HISTORY_REPORT: settings.make_url("/Admin/SettlementList.aspx"),
-        AUDIT_ORDERS_PAGE: settings.make_url("/Admin/Recycling/AuditOrders.aspx"),
-    }
-
-    @classmethod
-    def get_all_keys(cls):
-        """Returns all report mapper keys as a list."""
-        return [
-            cls.INBOUND_PAGE,
-            cls.SETTLEMENT_REPORT,
-            cls.TRANSACTION_HISTORY_REPORT,
-            cls.AUDIT_ORDERS_PAGE,
-        ]
-
-    @classmethod
-    def get_page_url(cls, key):
-        """Returns the URL mapped to the given key."""
-        return cls.PAGE_MAP.get(key, None)
-
-report_mapper_locator = ReportMapperKeys()
-
+    
 class InboundPageLocators:
     """
     A class for Inbound Page locators. All locators for this page should be defined here.

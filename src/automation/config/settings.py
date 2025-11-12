@@ -4,7 +4,6 @@ from urllib.parse import urljoin
 
 from pydantic_settings import BaseSettings
 from pydantic import HttpUrl, field_validator
-from typing import Optional
 
 # Get the absolute path of the project root directory
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -18,12 +17,11 @@ class Settings(BaseSettings):
 
     # File paths
     DOWNLOAD_PATH: str = os.path.join(PROJECT_ROOT, "downloads")
-    UPLOAD_PATH: str = os.path.join(PROJECT_ROOT, "uploads")
     LOG_FILE_PATH: str = os.path.join(PROJECT_ROOT, "logs/run.log")
     EXCEL_FILE_PATH: str = os.path.join(PROJECT_ROOT, "data/navigation.xlsx")
     SESSION_STORAGE_PATH: str = os.path.join(PROJECT_ROOT, "browser/state.json")
 
-    @field_validator("DOWNLOAD_PATH", "UPLOAD_PATH", "LOG_FILE_PATH", "EXCEL_FILE_PATH", "SESSION_STORAGE_PATH", mode="before")
+    @field_validator("DOWNLOAD_PATH", "LOG_FILE_PATH", "EXCEL_FILE_PATH", "SESSION_STORAGE_PATH", mode="before")
     @classmethod
     def _make_absolute(cls, value: str) -> str:
         """Ensure file system paths from env are absolute."""

@@ -3,7 +3,7 @@ import pandas as pd
 from collections import defaultdict
 from automation.config.settings import settings
 from automation.utilities.logger import logger
-from automation.config.excel_mapper import ExcelMapper
+from automation.utilities.excel_mapper import ExcelMapper
 
 
 class ExcelReader:
@@ -68,6 +68,7 @@ class ExcelReader:
             REPORT_TYPE = "REPORT TYPE"
             REPORT_NAME = "REPORT NAME"
             PRIORITY = "PRIORITY"
+            PAGE = "PAGE"
 
         Returns:
             defaultdict: A dictionary with Order IDs as keys and a list of report dictionaries as values.

@@ -1,15 +1,23 @@
-order_id,doc_type,DOWNLOAD,upload
-IN-3896,Settlement Report,false,false
-IN-3886,Data Erasure Report,false,false
-IN-3896,Equipment List,false,false
-IN-3886,Data Destruction Report,true,false
-IN-3886,Settlement Report,false,false
-IN-3886,Settlement Report - ALL ASSETS,false,false
-IN-3886,AP Invoice / AR Invoice,false,false
-IN-3886,Audit Report Excel,true,false
-IN-3886,Bill of Lading,true,false
-IN-3886,Settlement Summary,true,false
-IN-3886,Picture Report,true,false
-IN-3886,Receiving Report,true,false
-IN-3886,Receiving Summary Report,true,false
-IN-3886,Equipment List,false,false
+order_id,doc_type,download,upload
+O-10181,Bill of Lading,true,false
+O-10181,Data Destruction Report,true,false
+O-10181,Picture Report,true,false
+O-10181,Receiving Report,true,false
+O-10181,Settlement Summary,false,false
+O-10181,Receiving Summary Report,true,false
+O-10181,AP Invoice / AR Invoice,false,false
+O-10181,Audit Report Excel,true,false
+O-10181,Equipment List,false,false
+O-10181,Settlement Report,false,false
+O-10181,Settlement Report - ALL ASSETS,false,false
+O-10176,Bill of Lading,true,false
+O-10176,Data Destruction Report,true,false
+O-10176,Picture Report,true,false
+O-10176,Receiving Report,true,false
+O-10176,Settlement Summary,false,false
+O-10176,Receiving Summary Report,false,false
+O-10176,AP Invoice / AR Invoice,false,false
+O-10176,Audit Report Excel,true,false
+O-10176,Equipment List,false,false
+O-10176,Settlement Report,false,false
+O-10176,Settlement Report - ALL ASSETS,false,false

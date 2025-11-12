@@ -19,9 +19,6 @@ class SaveDownloadState:
 
       Columns: order_id, doc_type, DOWNLOAD (true/false), upload (true/false)
       """
-      # folder = PROJECT_ROOT + "/application_state"
-      # create_directory_if_not_exists(folder)
-      # csv_path = folder + "/downloads.csv"
 
       folder = Path(PROJECT_ROOT) / "application_state"
       create_directory_if_not_exists(folder)
@@ -29,11 +26,11 @@ class SaveDownloadState:
 
       logger.info(f"Saving download state for Order ID: {order_id}, Doc Type: {doc_type}, Downloaded: {downloaded}, Uploaded: {uploaded}")
 
-      fieldnames = ["order_id", "doc_type", "DOWNLOAD", "upload"]
+      fieldnames = ["order_id", "doc_type", "download", "upload"]
       new_values = {
         "order_id": order_id,
         "doc_type": doc_type,
-        "DOWNLOAD": str(bool(downloaded)).lower(),
+        "download": str(bool(downloaded)).lower(),
         "upload": str(bool(uploaded)).lower(),
       }
 
@@ -46,7 +43,7 @@ class SaveDownloadState:
           reader = csv.DictReader(fh)
           for row in reader:
             if row.get("order_id") == order_id and row.get("doc_type") == doc_type:
-              row["DOWNLOAD"] = new_values["DOWNLOAD"]
+              row["download"] = new_values["download"]
               row["upload"] = new_values["upload"]  
               updated = True
             # ensure all expected keys exist for consistent output
@@ -64,5 +61,78 @@ class SaveDownloadState:
         writer.writerows(rows)
         logger.info(f"Finished writing download state to CSV file: {csv_path}")
     
+    def clear(self) -> None:
+      """
+      Clear the download state CSV file.
+      """
+      folder = Path(PROJECT_ROOT) / "application_state"
+      csv_path = folder / "downloads.csv"
+
+      if csv_path.exists():
+        logger.info(f"Clearing download state file: {csv_path}")
+        csv_path.unlink()
+      else:
+        logger.info(f"No download state file to clear at: {csv_path}")
+
+    def load(self) -> list[dict]:
+      """
+      Load and return all download state entries from the CSV file.
+
+      Returns:
+          list[dict]: A list of dictionaries representing each row in the CSV.
+      """
+      folder = Path(PROJECT_ROOT) / "application_state"
+      csv_path = folder / "downloads.csv"
+      entries = []
+
+      if csv_path.exists():
+        logger.info(f"Loading download state from file: {csv_path}")
+        with csv_path.open("r", newline="", encoding="utf-8") as fh:
+          reader = csv.DictReader(fh)
+          for row in reader:
+            entries.append(row)
+        logger.info(f"Loaded {len(entries)} entries from download state file.")
+      else:
+        logger.info(f"No download state file found at: {csv_path}")
+
+      return entries
+    
+    def exists(self, order_id: str, doc_type: str) -> bool:
+      """
+      Check if a download state entry exists for the given order_id and doc_type.
+
+      Returns:
+          bool: True if the entry exists, False otherwise.
+      """
+      entries = self.load()
+      for entry in entries:
+        if entry.get("order_id") == order_id and entry.get("doc_type") == doc_type:
+          return True
+      return False
+    
+    def get_state(self, order_id: str, doc_type: str) -> dict | None:
+      """
+      Retrieve the download state entry for the given order_id and doc_type.
+
+      Returns:
+          dict | None: The entry dictionary if found, otherwise None.
+      """
+      entries = self.load()
+      for entry in entries:
+        if entry.get("order_id") == order_id and entry.get("doc_type") == doc_type:
+          return entry
+      return None
+    
+    def get_last_entry(self) -> dict | None:
+      """
+      Retrieve the last download state entry from the CSV file.
+
+      Returns:
+          dict | None: The last entry dictionary if found, otherwise None.
+      """
+      entries = self.load()
+      if entries:
+        return entries[-1]
+      return None
 
 save_state = SaveDownloadState()

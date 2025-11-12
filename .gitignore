@@ -22,7 +22,7 @@ screenshots/**/*
 
 application_state/**/*
 downloads/**/*
-
+**/~$navigation.xlsx
 
 # Data
 downloads/

@@ -4,11 +4,15 @@ from automation.ui.navigation import Navigation
 from automation.ui.page_base import PageBase
 from automation.utilities.excel_reader import excel_reader
 from automation.utilities.save_download_state import save_state
-from automation.utilities.file_manager import create_directory_if_not_exists
+from automation.utilities.file_manager import (
+    create_directory_if_not_exists,
+    check_if_folder_exists,
+    remove_directory
+)
 from automation.utilities.report_downloader import ReportDownloader
 from automation.config.settings import settings
-from automation.config.excel_mapper import report_mapper
-from automation.config.locators import ( report_mapper_locator, ReportMapperKeys )
+from automation.utilities.excel_mapper import ReportPageMapperKeys, report_mapper
+from automation.utilities.save_download_state import save_state
 
 from automation.utilities.logger import logger
 # from .upload_reports import UploadReportsWorkflow
@@ -30,12 +34,24 @@ class DownloadReportsWorkflow(PageBase):
         super().__init__(driver)
         self.navigation = Navigation(driver)
         excel_reader.read_excel_file(sheet_name="Sheet1", custom_fields=self.CUSTOM_FIELDS)
-        self.report_keys = report_mapper_locator.get_all_keys()
+        self.report_keys = report_mapper.get_all_keys()
         self.download_function = ReportDownloader(driver)
+        self.save_state = save_state
 
     def run(self):
         """Runs the download reports workflow."""
         logger.info("Starting the download reports workflow.")
+
+        last_downloaded_order = self.save_state.get_last_entry()
+
+        print(f"Last downloaded order: {last_downloaded_order}")
+        try:
+            if last_downloaded_order.get("order_id"):
+                logger.info(f"Resuming from last downloaded order ID: {last_downloaded_order.get('order_id')}")
+        except Exception:
+            logger.info("No previous download state found, starting fresh.")
+
+        # return
 
         # Get data from the Excel file
         orders = excel_reader.get_orders_from_excel()
@@ -72,50 +88,51 @@ class DownloadReportsWorkflow(PageBase):
             for report_data in order_data:
                 report_name = report_data.get(excel_reader.COLUMNS_MAPPER.REPORT_NAME)
                 report_type = report_data.get(excel_reader.COLUMNS_MAPPER.REPORT_TYPE)
+                page = report_data.get(excel_reader.COLUMNS_MAPPER.PAGE)
 
-                logger.info(f"Preparing to download report for Order ID: {order_id} - Report Name: {report_name}, Report Type: {report_type}")
+                logger.info(f"Preparing to download report for Order ID: {order_id} - Report Name: {report_name}, Report Type: {page}")
                 save_state.add(order_id, report_name, downloaded=False, uploaded=False)
 
                 if not report_name:
                     logger.warning(f"Skipping report with no name for Order ID: {order_id}.")
                     continue
 
-                report_name_map = report_mapper.get_report_key(report_name)
+                report_name_map = report_mapper.get_key(page)
                 logger.info(f"Report map for report : {report_name} is map: {report_name_map}")
                 if report_name_map is None:
                     logger.warning(f"Report name '{report_name}' not recognized. Skipping download.")
                     continue
 
-                if report_name_map == ReportMapperKeys.INBOUND_PAGE:
+                if report_name_map == ReportPageMapperKeys.INBOUND:
                     self.download_function.download_inbound_page(
-                        locator=ReportMapperKeys.INBOUND_PAGE,
+                        locator=ReportPageMapperKeys.INBOUND,
                         report_name=report_name,
-                        order_download_path=order_download_path,
+                        download_path=order_download_path,
                         order_id=order_id,
                         report_type=report_type
                     )
-                elif report_name_map == ReportMapperKeys.TRANSACTION_HISTORY_REPORT:
+                elif report_name_map == ReportPageMapperKeys.INVOICE:
                     self.download_function.download_transaction_report(
-                        locator=ReportMapperKeys.TRANSACTION_HISTORY_REPORT, 
+                        locator=ReportPageMapperKeys.INVOICE, 
                         report_name=report_name, 
-                        order_download_path=order_download_path, 
+                        download_path=order_download_path,
                         order_id=order_id, 
                         report_type=report_type
                     )
-                elif report_name_map is ReportMapperKeys.SETTLEMENT_REPORT:
+                elif report_name_map is ReportPageMapperKeys.SETTLEMENT:
                     continue
                     self.download_function.download_settlement_page(
-                        locator=ReportMapperKeys.SETTLEMENT_REPORT,
+                        locator=ReportPageMapperKeys.SETTLEMENT,
                         report_name=report_name,
-                        order_download_path=order_download_path,
+                        download_path=order_download_path,
                         order_id=order_id,
-                    report_type=report_type
+                        report_type=report_type
                 )
-                elif report_name_map is ReportMapperKeys.AUDIT_ORDERS_PAGE:
+                elif report_name_map is ReportPageMapperKeys.AUDIT:
                     self.download_function.download_audit_report(
-                        locator=ReportMapperKeys.AUDIT_ORDERS_PAGE,
+                        locator=ReportPageMapperKeys.AUDIT,
                         report_name=report_name,
-                        order_download_path=order_download_path,
+                        download_path=order_download_path,
                         order_id=order_id,
                         report_type=report_type
                     )

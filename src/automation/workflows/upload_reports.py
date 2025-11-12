@@ -6,7 +6,7 @@ from selenium.webdriver.common.keys import Keys
 from automation.ui.page_base import PageBase
 from automation.ui.navigation import Navigation
 from automation.config.locators import InboundPageLocators, report_mapper_locator, ReportMapperKeys
-from automation.config.excel_mapper import report_mapper
+from automation.utilities.excel_mapper import report_mapper
 from automation.utilities.logger import logger
 from automation.utilities.file_manager import get_files_in_directory, create_directory_if_not_exists
 

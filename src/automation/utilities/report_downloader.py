@@ -6,10 +6,13 @@ from selenium.webdriver.common.keys import Keys
 from automation.ui.page_base import PageBase
 from automation.utilities.save_download_state import save_state
 from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.support.ui import WebDriverWait
-from automation.config.excel_mapper import report_mapper
-from automation.config.locators import ( report_mapper_locator, ReportMapperKeys, 
-    InboundPageLocators, AuditReportsMapper, TransactionalPageLoaders, SettlementReportLocators )
+from automation.utilities.excel_mapper import ReportPageMapperKeys, report_mapper
+from automation.config.locators import ( 
+    InboundPageLocators, 
+    AuditReportsMapper, 
+    TransactionalPageLoaders, 
+    SettlementReportLocators 
+    )
 
 from automation.utilities.logger import logger
 
@@ -28,7 +31,14 @@ class ReportDownloader(PageBase):
         super().__init__(driver)
 
 
-    def download_inbound_page(self, locator=None, report_name=None, order_download_path=None, order_id=None, report_type=None):
+    def download_inbound_page(
+        self, 
+        locator=None,
+        report_name=None,
+        download_path=None, 
+        order_id=None,
+        report_type=None,
+    ):
         """
         Handles RazorERP modal lifecycle perfectly across multiple downloads.
         Ensures overlays are cleaned, dialogs reset, and no click intercepts happen.
@@ -37,18 +47,15 @@ class ReportDownloader(PageBase):
         logger.info(f"Starting download process for Order ID: {order_id}, Report: {report_name}, Type: {report_type}")
 
         # --- Step 0: Validation ---
-        if locator is None or locator != ReportMapperKeys.INBOUND_PAGE:
+        if locator is None or locator != ReportPageMapperKeys.INBOUND:
             logger.error("Invalid locator provided.")
-            return False
-        if not self.driver or not report_mapper.get_report_key(report_name) or not report_type:
-            logger.error("Invalid arguments or missing report info.")
             return False
 
         # --- Step 1: Ensure correct page ---
-        page_url = report_mapper_locator.get_page_url(report_mapper_locator.INBOUND_PAGE)
+        page_url = report_mapper.get_page_url(locator)
         if self.driver.current_url != page_url:
             self.driver.get(page_url)
-            time.sleep(5)
+            time.sleep(2)
             self.driver.execute_script("""
                 const el = document.getElementById('gritter-notice-wrapper');
                 if (el) { el.style.display = 'none'; el.style.visibility = 'hidden'; }
@@ -84,7 +91,7 @@ class ReportDownloader(PageBase):
 
             time.sleep(1)
             orders_search_field.send_keys(order_id)
-            time.sleep(2)
+            time.sleep(1)
             orders_search_field.send_keys(Keys.ENTER)
             logger.info(f"Searched for order ID: {order_id}")
             time.sleep(2)
@@ -113,7 +120,7 @@ class ReportDownloader(PageBase):
             return self.download_inbound_page(
                 locator=locator,
                 report_name=report_name,
-                order_download_path=order_download_path,
+                download_path=download_path,
                 order_id=order_id,
                 report_type=report_type
             )
@@ -128,12 +135,12 @@ class ReportDownloader(PageBase):
 
         try:
             download_button.click()
-            time.sleep(2)
+            time.sleep(1)
         except Exception:
             self.driver.execute_script("arguments[0].click();", download_button)
         logger.info("Clicked Print/Download button; waiting for modal.")
 
-        time.sleep(2)
+        time.sleep(1)
 
         # --- Step 6: Wait for modal ---
         reports_container = self.wait.wait_for_element_to_be_visible(InboundPageLocators.SEARCH_FIELD_SETTLEMENTS, timeout=10)
@@ -204,9 +211,16 @@ class ReportDownloader(PageBase):
         time.sleep(2)
         return True
 
-    def download_transaction_report(self, locator=None, report_name=None, order_download_path=None, order_id=None, report_type=None):
+    def download_transaction_report(
+        self, 
+        locator=None,
+        report_name=None,
+        download_path=None, 
+        order_id=None,
+        report_type=None,
+    ):
 
-        if locator is None and locator != ReportMapperKeys.TRANSACTION_HISTORY_REPORT:
+        if locator is None and locator != ReportPageMapperKeys.INVOICE:
             logger.error("Invalid locator provided for downloading inbound page report.")
             return False
 
@@ -214,15 +228,11 @@ class ReportDownloader(PageBase):
             logger.error("Invalid driver provided for downloading inbound page report.")
             return False
         
-        if report_mapper.get_report_key(report_name) is None:
-            logger.error("Invalid report name provided for downloading inbound page report.")
-            return False
-
         if report_type is None:
             logger.error("Invalid report type provided for downloading inbound page report.")
             return False
 
-        page_url = report_mapper_locator.get_page_url(report_mapper_locator.TRANSACTION_HISTORY_REPORT)
+        page_url = report_mapper.get_page_url(locator)
 
         if self.driver.current_url != page_url:
             self.driver.get(page_url)
@@ -292,9 +302,16 @@ class ReportDownloader(PageBase):
                 else:
                     logger.error("Unable to load page")
                     
-    def download_audit_report(self, locator=None, report_name=None, order_download_path=None, order_id=None, report_type=None):
+    def download_audit_report(
+        self, 
+        locator=None,
+        report_name=None,
+        download_path=None, 
+        order_id=None,
+        report_type=None,
+    ):
 
-        if locator is None and locator != ReportMapperKeys.AUDIT_ORDERS_PAGE:
+        if locator is None and locator != ReportPageMapperKeys.AUDIT:
             logger.error("Invalid locator provided for downloading inbound page report.")
             return False
 
@@ -302,15 +319,11 @@ class ReportDownloader(PageBase):
             logger.error("Invalid driver provided for downloading inbound page report.")
             return False
         
-        if report_mapper.get_report_key(report_name) is None:
-            logger.error("Invalid report name provided for downloading inbound page report.")
-            return False
-
         if report_type is None:
             logger.error("Invalid report type provided for downloading inbound page report.")
             return False
 
-        page_url = report_mapper_locator.get_page_url(report_mapper_locator.AUDIT_ORDERS_PAGE)
+        page_url = report_mapper.get_page_url(locator)
         
         if self.driver.current_url != page_url:
             self.driver.get(page_url)
@@ -344,7 +357,6 @@ class ReportDownloader(PageBase):
             if table_cell:
                 table_cell.click()
                 time.sleep(2)
-                table_cell.send_keys(Keys.CONTROL, 'a')
 
                 download_button = self.wait.wait_for_element_to_be_visible(AuditReportsMapper.PRINT_BUTTON)
                 download_button.click()
@@ -376,7 +388,14 @@ class ReportDownloader(PageBase):
             logger.error("Search field not found.")
             return False   
         
-    def download_settlement_page(self, locator=None, report_name=None, order_download_path=None, order_id=None, report_type=None):
+    def download_settlement_page(
+        self, 
+        locator=None,
+        report_name=None,
+        download_path=None, 
+        order_id=None,
+        report_type=None,
+    ):
         """
         Handles RazorERP modal lifecycle perfectly across multiple downloads.
         Ensures overlays are cleaned, dialogs reset, and no click intercepts happen.
@@ -385,15 +404,13 @@ class ReportDownloader(PageBase):
         logger.info(f"Starting download process for Order ID: {order_id}, Report: {report_name}, Type: {report_type}")
 
         # --- Step 0: Validation ---
-        if locator is None or locator != ReportMapperKeys.SETTLEMENT_REPORT:
+        if locator is None or locator != ReportPageMapperKeys.SETTLEMENT:
             logger.error("Invalid locator provided.")
-            return False
-        if not self.driver or not report_mapper.get_report_key(report_name) or not report_type:
-            logger.error("Invalid arguments or missing report info.")
             return False
 
         # --- Step 1: Ensure correct page ---
-        page_url = report_mapper_locator.get_page_url(report_mapper_locator.SETTLEMENT_REPORT)
+        page_url = report_mapper.get_page_url(locator)
+
         if self.driver.current_url != page_url:
             self.driver.get(page_url)
             time.sleep(5)
@@ -449,7 +466,7 @@ class ReportDownloader(PageBase):
             return self.download_inbound_page(
                 locator=locator,
                 report_name=report_name,
-                order_download_path=order_download_path,
+                download_path=download_path,
                 order_id=order_id,
                 report_type=report_type
             )
