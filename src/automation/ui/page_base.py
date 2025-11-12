@@ -7,6 +7,7 @@ from automation.utilities.logger import logger
 import time
 from automation.utilities.wait_utils import WaitUtils
 from automation.utilities.action_utils import Actions
+from selenium.webdriver.common.keys import Keys
 
 class PageBase:
     """
@@ -111,3 +112,90 @@ class PageBase:
                 });
             });
         """)
+
+    def clear_input(self, element_or_locator, timeout=5):
+        """Robustly clear an input or contenteditable element.
+
+        Accepts either a Selenium WebElement or a locator tuple (By, value).
+        Strategy:
+        - If locator provided, wait for visibility.
+        - Try element.clear()
+        - If value remains, use JS to set value/innerText to '' and dispatch input/change
+        - Fallback to sending CTRL+A + BACKSPACE
+        Returns True if element is empty after attempts, False otherwise.
+        """
+        from selenium.webdriver.remote.webelement import WebElement
+        el = None
+        try:
+            if isinstance(element_or_locator, tuple):
+                el = self.wait.wait_for_element_to_be_visible(element_or_locator, timeout=timeout)
+            elif isinstance(element_or_locator, WebElement):
+                el = element_or_locator
+            else:
+                logger.warning("clear_input received unsupported type: %s", type(element_or_locator))
+                return False
+
+            if not el:
+                return False
+
+            # Try native clear first
+            try:
+                el.clear()
+            except Exception:
+                # ignore and continue to JS fallback
+                pass
+
+            time.sleep(0.05)
+
+            # Check current content (value or innerText)
+            remaining = self.driver.execute_script(
+                "return arguments[0].value !== undefined ? arguments[0].value : (arguments[0].innerText || '');",
+                el,
+            )
+
+            if remaining:
+                # JS: clear and dispatch events so frameworks (React/Vue) pick it up
+                try:
+                    self.driver.execute_script(
+                        """
+                        const el = arguments[0];
+                        if (el.value !== undefined) {
+                            el.value = '';
+                            el.dispatchEvent(new Event('input', { bubbles: true }));
+                            el.dispatchEvent(new Event('change', { bubbles: true }));
+                        } else {
+                            el.innerText = '';
+                            el.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                        """,
+                        el,
+                    )
+                except Exception:
+                    logger.debug("JS clear failed, will try keyboard fallback.")
+
+            # verify again
+            time.sleep(0.05)
+            remaining = self.driver.execute_script(
+                "return arguments[0].value !== undefined ? arguments[0].value : (arguments[0].innerText || '');",
+                el,
+            )
+
+            if remaining:
+                # keyboard fallback: Ctrl+A + Backspace
+                try:
+                    el.send_keys(Keys.CONTROL, 'a')
+                    el.send_keys(Keys.BACKSPACE)
+                except Exception:
+                    # some elements may not accept keys - ignore
+                    pass
+
+            # final check
+            remaining = self.driver.execute_script(
+                "return arguments[0].value !== undefined ? arguments[0].value : (arguments[0].innerText || '');",
+                el,
+            )
+
+            return not bool(remaining)
+        except Exception as e:
+            logger.warning(f"clear_input failed: {e}")
+            return False

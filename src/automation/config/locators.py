@@ -24,9 +24,9 @@ class ReportMapperKeys:
 
     PAGE_MAP = {
         INBOUND_PAGE: settings.make_url("/Admin/RecyclingOrders.aspx"),
-        SETTLEMENT_REPORT: settings.make_url("/Admin/SettlementReport.aspx"),
+        SETTLEMENT_REPORT: settings.make_url("/Admin/SettlementList.aspx"),
         TRANSACTION_HISTORY_REPORT: settings.make_url("/Admin/SettlementList.aspx"),
-        AUDIT_ORDERS_PAGE: settings.make_url("/Admin/AuditOrders.aspx"),
+        AUDIT_ORDERS_PAGE: settings.make_url("/Admin/Recycling/AuditOrders.aspx"),
     }
 
     @classmethod
@@ -82,12 +82,28 @@ class TransactionalPageLoaders:
     AR_REPORT_CHECKBOX = (By.ID, "cb_Doc_AR_Invoice")
     
 class AuditReportsMapper:
-    SEARCH_FILED = (By.ID, "ag-input-id-60")
+    SEARCH_FIELD = (By.XPATH, "//*[@aria-label='Order # Filter Input']")
     
-    CELL_LOCATION = (By.CSS_SELECTOR, "(//*[@col-id='RecyclingOrderAutoName'])[last()]")
+    CELL_LOCATION = (By.XPATH, "(//*[@col-id='RecyclingOrderAutoName'])[last()]")
+
+    PRINT_BUTTON = (By.ID, "bt_PrintDownload")
+    
+    # CHECKBOX_LOCATOR
+    CHECKBOX_AUDIT_REPORT = (By.ID, "cb_Doc_Audit_Report_Excel")
+    CHECBOX_INCLUDE_DRIVES = (By.ID, "includeHardDrives")
 
 class SettlementReportLocators:
     """
     A class for Settlement Report locators. All locators for this page should be defined here.
     """
     SEARCH_FIELD = (By.ID, "tb_Search_All")
+    
+    STANDARD_DOWNLOAD_BUTTON = (By.XPATH, "//button[normalize-space(text())='Print/Download']")
+    DOWNLOAD_BUTTON_NEW = (By.XPATH, "//button[normalize-space(text())='Print/Download New']")
+
+    REPORTS_LIST_CONTAINER = (By.ID, "div_ReportsContainer")
+
+    # TYPE => NEW
+    # Search here...
+    MODAL_ID = "div_PrintDialogSettlementNew"
+    SEARCH_FIELD_NEW = (By.XPATH, "//input[@placeholder='Search here...']")

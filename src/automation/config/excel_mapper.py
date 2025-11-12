@@ -75,7 +75,7 @@ class ReportMapper:
         "Picture Report": ReportMapperKeys.INBOUND_PAGE,
         "Receiving Report": ReportMapperKeys.INBOUND_PAGE,
         "Settlement Summary": ReportMapperKeys.INBOUND_PAGE,
-        "Summary Receiving Report": ReportMapperKeys.INBOUND_PAGE,
+        "Receiving Summary Report": ReportMapperKeys.INBOUND_PAGE,
     }
     mapping = {k.lower(): v for k, v in mapping.items()}
 

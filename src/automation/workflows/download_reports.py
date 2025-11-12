@@ -11,6 +11,7 @@ from automation.config.excel_mapper import report_mapper
 from automation.config.locators import ( report_mapper_locator, ReportMapperKeys )
 
 from automation.utilities.logger import logger
+from .upload_reports import UploadReportsWorkflow
 
 class DownloadReportsWorkflow(PageBase):
     """
@@ -110,5 +111,17 @@ class DownloadReportsWorkflow(PageBase):
                         order_id=order_id,
                     report_type=report_type
                 )
+                elif report_name_map is ReportMapperKeys.AUDIT_ORDERS_PAGE:
+                    self.download_function.download_audit_report(
+                        locator=ReportMapperKeys.AUDIT_ORDERS_PAGE,
+                        report_name=report_name,
+                        order_download_path=order_download_path,
+                        order_id=order_id,
+                        report_type=report_type
+                    )
+                else:
+                    logger.warning(f"No download method defined for report type: {report_name_map}")
+
+            # DownloadReportsWorkflow
 
         logger.info("Download reports workflow completed.")

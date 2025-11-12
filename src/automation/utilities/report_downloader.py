@@ -74,7 +74,14 @@ class ReportDownloader(PageBase):
             return False
 
         try:
-            orders_search_field.clear()
+            try:
+                self.clear_input(orders_search_field)
+            except Exception:
+                try:
+                    orders_search_field.clear()
+                except Exception:
+                    pass
+
             time.sleep(1)
             orders_search_field.send_keys(order_id)
             time.sleep(2)
@@ -102,7 +109,7 @@ class ReportDownloader(PageBase):
         if not self.driver.execute_script("return $('#div_ReportsContainer').length"):
             logger.warning("Modal element missing. Reloading page to reset RazorERP context.")
             self.driver.refresh()
-            time.sleep(8)
+            time.sleep(4)
             return self.download_inbound_page(
                 locator=locator,
                 report_name=report_name,
@@ -119,14 +126,12 @@ class ReportDownloader(PageBase):
             logger.error("Download button not found.")
             return False
 
-        # self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", download_button)
         try:
             download_button.click()
-            time.sleep(10)
+            time.sleep(2)
         except Exception:
             self.driver.execute_script("arguments[0].click();", download_button)
         logger.info("Clicked Print/Download button; waiting for modal.")
-        # logger.debug(self.driver.execute_script("return $('#div_ReportsContainer').length"))
 
         time.sleep(2)
 
@@ -320,17 +325,228 @@ class ReportDownloader(PageBase):
             
         time.sleep(2)
         
-        search_filed = self.wait.wait_for_element_to_be_visible(AuditReportsMapper.SEARCH_FILED)
-        if search_filed:
-            search_filed.clear()
-            search_filed.send_keys(order_id)
+        search_field = self.wait.wait_for_element_to_be_visible(AuditReportsMapper.SEARCH_FIELD)
+        if search_field:
+            try:
+                self.clear_input(search_field)
+            except Exception:
+                try:
+                    search_field.clear()
+                except Exception:
+                    pass
+
+            search_field.send_keys(order_id)
             time.sleep(2)
-            search_filed.send_keys(Keys.ENTER)
+            search_field.send_keys(Keys.ENTER)
             time.sleep(2)
             
             table_cell = self.wait.wait_for_element_to_be_visible(AuditReportsMapper.CELL_LOCATION, timeout=10)
             if table_cell:
                 table_cell.click()
                 time.sleep(2)
+                table_cell.send_keys(Keys.CONTROL, 'a')
+
+                download_button = self.wait.wait_for_element_to_be_visible(AuditReportsMapper.PRINT_BUTTON)
+                download_button.click()
+                time.sleep(2)
+    
+                checkbox_audit_report = self.wait.wait_for_element_to_be_visible(AuditReportsMapper.CHECKBOX_AUDIT_REPORT)
+                checkbox_include_drives = self.wait.wait_for_element_to_be_visible(AuditReportsMapper.CHECBOX_INCLUDE_DRIVES)
+
+                if checkbox_audit_report and not checkbox_audit_report.is_selected():
+                    checkbox_audit_report.click()
+                    time.sleep(1)
                 
-                table_cell.send_keys(Keys.CONTROL, 'a')    
+                if checkbox_include_drives and not checkbox_include_drives.is_selected():
+                    checkbox_include_drives.click()
+                    time.sleep(1)
+
+                download_button = self.wait.wait_for_element_to_be_visible((
+                    By.XPATH, "//*[@id='dlgPrint_ButtonPreview']/preceding-sibling::*[1]"), timeout=10)
+                if download_button:
+                    download_button.click()
+                    logger.info(f"Download initiated for Audit report '{report_name}' of type '{report_type}'.")
+                    time.sleep(2)
+                    save_state.add(order_id, report_name, downloaded=True, uploaded=False)
+                    return True
+            else:
+                logger.error(f"Order ID '{order_id}' not found in Audit Reports.")
+                return False
+        else:
+            logger.error("Search field not found.")
+            return False   
+        
+    def download_settlement_page(self, locator=None, report_name=None, order_download_path=None, order_id=None, report_type=None):
+        """
+        Handles RazorERP modal lifecycle perfectly across multiple downloads.
+        Ensures overlays are cleaned, dialogs reset, and no click intercepts happen.
+        """
+
+        logger.info(f"Starting download process for Order ID: {order_id}, Report: {report_name}, Type: {report_type}")
+
+        # --- Step 0: Validation ---
+        if locator is None or locator != ReportMapperKeys.SETTLEMENT_REPORT:
+            logger.error("Invalid locator provided.")
+            return False
+        if not self.driver or not report_mapper.get_report_key(report_name) or not report_type:
+            logger.error("Invalid arguments or missing report info.")
+            return False
+
+        # --- Step 1: Ensure correct page ---
+        page_url = report_mapper_locator.get_page_url(report_mapper_locator.SETTLEMENT_REPORT)
+        if self.driver.current_url != page_url:
+            self.driver.get(page_url)
+            time.sleep(5)
+            self.driver.execute_script("""
+                const el = document.getElementById('gritter-notice-wrapper');
+                if (el) { el.style.display = 'none'; el.style.visibility = 'hidden'; }
+            """)
+            logger.info("Navigated to settlement report page and cleared notification overlays.")
+
+        # --- Step 3: Search for order ---
+        orders_search_field = self.wait.wait_for_element_to_be_visible(SettlementReportLocators.SEARCH_FIELD, timeout=20)
+        if not orders_search_field:
+            logger.error("Search field not found.")
+            return False
+
+        try:
+            try:
+                self.clear_input(orders_search_field)
+            except Exception:
+                try:
+                    orders_search_field.clear()
+                except Exception:
+                    pass
+
+            time.sleep(1)
+            orders_search_field.send_keys(order_id)
+            time.sleep(2)
+            orders_search_field.send_keys(Keys.ENTER)
+            logger.info(f"Searched for order ID: {order_id}")
+            time.sleep(2)
+        except Exception as e:
+            logger.error(f"Failed to search for order {order_id}: {e}")
+            return False
+
+        # --- Step 4: Select checkbox ---
+        order_element = self.wait.wait_for_element_to_be_visible((By.CSS_SELECTOR, f"td[title='{order_id}']"), timeout=30)
+        if not order_element:
+            logger.error(f"Order ID '{order_id}' not found.")
+            return False
+
+        row = order_element.find_element(By.XPATH, "./ancestor::tr[1]")
+        checkbox = row.find_element(By.XPATH, ".//td[1]//input[@type='checkbox']")
+        self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", checkbox)
+        if not checkbox.is_selected():
+            checkbox.click()
+            time.sleep(1)
+        logger.info(f"Selected checkbox for Order ID: {order_id}")
+
+        if not self.driver.execute_script("return $('#div_ReportsContainer').length"):
+            logger.warning("Modal element missing. Reloading page to reset RazorERP context.")
+            self.driver.refresh()
+            time.sleep(4)
+            return self.download_inbound_page(
+                locator=locator,
+                report_name=report_name,
+                order_download_path=order_download_path,
+                order_id=order_id,
+                report_type=report_type
+            )
+        
+        download_button = self.wait.wait_for_element_to_be_visible(
+            SettlementReportLocators.STANDARD_DOWNLOAD_BUTTON if report_type.lower() == "standard"
+            else SettlementReportLocators.DOWNLOAD_BUTTON_NEW, timeout=15)
+        if not download_button:
+            logger.error("Download button not found.")
+            return False
+
+        try:
+            download_button.click()
+            time.sleep(2)
+        except Exception:
+            self.driver.execute_script("arguments[0].click();", download_button)
+        logger.info("Clicked Print/Download button; waiting for modal.")
+
+        time.sleep(2)
+
+        # --- Step 6: Wait for modal ---
+        if report_type.lower() == "standard":
+            reports_container = self.wait.wait_for_element_to_be_visible(SettlementReportLocators.REPORTS_LIST_CONTAINER, timeout=10)
+            if not reports_container:
+                logger.error("Reporting Station modal didn't appear.")
+                self.driver.save_screenshot(f"screenshots/modal_missing_{order_id}.png")
+                return False
+
+            time.sleep(1)
+
+            # --- Step 7: Select report checkboxes ---
+            parts = ["cb", "Doc", report_name]
+            last_part = "_".join(word.capitalize() for word in parts[-1].split())
+            report_id = "_".join([*parts[:-1], last_part])
+            report_checkbox = self.wait.wait_for_element_to_be_visible((By.ID, report_id), timeout=15)
+
+            if not report_checkbox:
+                logger.error(f"Report checkbox {report_id} not found.")
+                return False
+
+            parent_div = report_checkbox.find_element(By.XPATH, "./ancestor::div[contains(@class,'print-dialog-doctype')]")
+            nested_checkboxes = parent_div.find_elements(By.XPATH, ".//input[@type='checkbox']")
+            for cb in nested_checkboxes:
+                try:
+                    if not cb.is_selected():
+                        cb.click()
+                except Exception as e:
+                    logger.warning(f"Could not select checkbox {cb.get_attribute('id')}: {e}")
+            logger.info(f"Selected all related checkboxes for '{report_name}'.")
+
+            # --- Step 8: Trigger download ---
+            final_download_button = self.wait.wait_for_element_to_be_visible(
+                (By.XPATH, "//*[@id='dlgPrint_ButtonPreview']/preceding-sibling::*[1]"), timeout=15
+            )
+            if not final_download_button:
+                logger.error("Final download button not found.")
+                return False
+
+            final_download_button.click()
+            logger.info(f"Download initiated for report '{report_name}' of type '{report_type}'.")
+
+            for cb in nested_checkboxes:
+                try:
+                    if cb.is_selected():
+                        cb.click()
+                except Exception as e:
+                    logger.warning(f"Could not deselect checkbox {cb.get_attribute('id')}: {e}")
+
+            save_state.add(order_id, report_name, downloaded=True, uploaded=False)
+            time.sleep(1)
+
+            # --- Step 9: Close modal ---
+            try:
+                close_button = self.wait.wait_for_element_to_be_visible(
+                    (By.XPATH, "//*[@id='dlgPrint_ButtonPreview']/following-sibling::*[1]")
+                )
+                if close_button:
+                    close_button.click()
+                    logger.info("Modal closed successfully via normal button click.")
+                else:
+                    raise TimeoutException("Close button not clickable.")
+            except Exception as e:
+                logger.warning(f"Modal close failed ({e}), using JS fallback.")
+                self.driver.execute_script("""
+                    document.querySelectorAll('.ui-dialog-titlebar-close, button.ui-dialog-titlebar-close')
+                        .forEach(btn => btn.click());
+                """)
+            time.sleep(2)
+            return True
+        else:
+            reports_container = self.wait.wait_for_element_to_be_visible((By.ID, SettlementReportLocators.MODAL_ID), timeout=10)
+            if not reports_container:
+                logger.error("Reporting Station modal didn't appear.")
+                self.driver.save_screenshot(f"screenshots/modal_missing_{order_id}.png")
+                return False
+
+            time.sleep(1)
+
+            logger.warning("This type of report download is not Implented. Skipping...")
+            return False

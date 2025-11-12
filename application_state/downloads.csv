@@ -2,14 +2,14 @@ order_id,doc_type,DOWNLOAD,upload
 IN-3896,Settlement Report,false,false
 IN-3886,Data Erasure Report,false,false
 IN-3896,Equipment List,false,false
-IN-3886,Data Destruction Report,false,false
+IN-3886,Data Destruction Report,true,false
 IN-3886,Settlement Report,false,false
 IN-3886,Settlement Report - ALL ASSETS,false,false
 IN-3886,AP Invoice / AR Invoice,false,false
-IN-3886,Audit Report Excel,false,false
+IN-3886,Audit Report Excel,true,false
 IN-3886,Bill of Lading,true,false
-IN-3886,Settlement Summary,false,false
-IN-3886,Picture Report,false,false
-IN-3886,Receiving Report,false,false
-IN-3886,Receiving Summary Report,false,false
+IN-3886,Settlement Summary,true,false
+IN-3886,Picture Report,true,false
+IN-3886,Receiving Report,true,false
+IN-3886,Receiving Summary Report,true,false
 IN-3886,Equipment List,false,false
