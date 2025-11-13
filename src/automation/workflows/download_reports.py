@@ -120,7 +120,6 @@ class DownloadReportsWorkflow(PageBase):
                         report_type=report_type
                     )
                 elif report_name_map is ReportPageMapperKeys.SETTLEMENT:
-                    continue
                     self.download_function.download_settlement_page(
                         locator=ReportPageMapperKeys.SETTLEMENT,
                         report_name=report_name,
