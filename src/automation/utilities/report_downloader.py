@@ -387,7 +387,7 @@ class ReportDownloader(PageBase):
         else:
             logger.error("Search field not found.")
             return False   
-        
+
     def download_settlement_page(
         self, 
         locator=None,
@@ -557,13 +557,81 @@ class ReportDownloader(PageBase):
             time.sleep(2)
             return True
         else:
+            logger.info(f"Handling PRINT/NEW download for {report_name}")
             reports_container = self.wait.wait_for_element_to_be_visible((By.ID, SettlementReportLocators.MODAL_ID), timeout=10)
             if not reports_container:
                 logger.error("Reporting Station modal didn't appear.")
-                self.driver.save_screenshot(f"screenshots/modal_missing_{order_id}.png")
+                self.driver.save_screenshot(f"screenshots/modal_missing_{order_id}_{report_name}.png")
                 return False
 
             time.sleep(1)
 
-            logger.warning("This type of report download is not Implented. Skipping...")
-            return False
+            # Search for the report
+            search_field = self.wait.wait_for_element_to_be_visible(SettlementReportLocators.SEARCH_FIELD_NEW, timeout=10)
+            if not search_field:
+                logger.error("Search field in modal not found.")
+                self.driver.save_screenshot(f"screenshots/search_missing_{order_id}_{report_name}.png")
+                return False
+
+            search_field.clear()
+            search_field.send_keys(report_name)
+            time.sleep(1)
+            search_field.send_keys(Keys.ENTER)
+            time.sleep(1)
+            logger.info(f"Entered report name '{report_name}' in search field and pressed enter")
+
+            # Assume the first matching item is selected or click it
+            # Perhaps there's a list, click the first item
+            try:
+                # Find the report item, perhaps by text
+                report_item = self.wait.wait_for_element_to_be_visible((By.XPATH, f"//*[contains(text(), '{report_name}')]"), timeout=10)
+                if report_item:
+                    report_item.click()
+                    logger.info(f"Clicked report item '{report_name}'")
+                    time.sleep(1)
+                else:
+                    logger.error(f"Report '{report_name}' not found in the list.")
+                    self.driver.save_screenshot(f"screenshots/report_not_found_{order_id}_{report_name}.png")
+                    return False
+            except Exception as e:
+                logger.error(f"Failed to select report '{report_name}': {e}")
+                self.driver.save_screenshot(f"screenshots/select_error_{order_id}_{report_name}.png")
+                return False
+
+            # Now, trigger download, perhaps there's a download button in the modal
+            final_download_button = self.wait.wait_for_element_to_be_visible(
+                (By.XPATH, "//button[contains(text(), 'Download')]"), timeout=10
+            )
+            if not final_download_button:
+                logger.error("Download button in modal not found.")
+                self.driver.save_screenshot(f"screenshots/download_btn_missing_{order_id}_{report_name}.png")
+                return False
+
+            try:
+                self.driver.execute_script("arguments[0].click();", final_download_button)
+            except Exception as e:
+                logger.warning(f"Download button JS click failed ({e})")
+                final_download_button.click()
+            logger.info(f"Download initiated for report '{report_name}' of type '{report_type}'.")
+
+            save_state.add(order_id, report_name, downloaded=True, uploaded=False)
+            time.sleep(1)
+
+            # Close modal
+            try:
+                close_button = self.wait.wait_for_element_to_be_visible(
+                    (By.XPATH, "//button[@title='Close']")
+                )
+                if close_button:
+                    close_button.click()
+                    logger.info("Modal closed successfully.")
+                else:
+                    raise TimeoutException("Close button not clickable.")
+            except Exception as e:
+                logger.warning(f"Modal close failed ({e}), using JS fallback.")
+                self.driver.execute_script("""
+                    document.querySelectorAll('.ui-dialog-titlebar-close, button.ui-dialog-titlebar-close')
+                        .forEach(btn => btn.click());
+                """)
+            time.sleep(2)
+            return True
